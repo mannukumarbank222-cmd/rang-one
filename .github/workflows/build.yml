@@ -15,10 +15,10 @@ jobs:
         with: { distribution: temurin, java-version: '17' }
       - uses: gradle/actions/setup-gradle@v3
         with: { gradle-version: '8.7' }
-      - run: echo "${{ secrets.KEYSTORE_B64 }}" | base64 -d > $RUNNER_TEMP/rangone.p12
+      - run: echo "${{ secrets.KEYSTORE_B64 }}" | base64 -d > $RUNNER_TEMP/bharosa.keystore
       - run: gradle assembleRelease
         env:
-          KS_PATH: ${{ runner.temp }}/rangone.p12
+          KS_PATH: ${{ runner.temp }}/bharosa.keystore
           KS_PASS: ${{ secrets.KEYSTORE_PASS }}
       - run: cp app/build/outputs/apk/release/app-release.apk RangOne_v4.7.apk
       - uses: actions/upload-artifact@v4

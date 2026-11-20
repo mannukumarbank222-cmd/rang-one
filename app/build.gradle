@@ -5,11 +5,13 @@ android {
   defaultConfig { applicationId 'app.bharosa.browser'; minSdk 24; targetSdk 34; versionCode 11; versionName '4.7' }
   signingConfigs {
     release {
-      storeFile file(System.getenv('KS_PATH') ?: 'none.p12')
+      storeFile file(System.getenv('KS_PATH') ?: 'none.keystore')
       storePassword System.getenv('KS_PASS') ?: ''
-      keyAlias 'rangone'
+      keyAlias 'bharosa'
       keyPassword System.getenv('KS_PASS') ?: ''
       storeType 'pkcs12'
+      enableV1Signing true
+      enableV2Signing true
     }
   }
   buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
