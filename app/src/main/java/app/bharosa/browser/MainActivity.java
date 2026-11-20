@@ -470,7 +470,7 @@ public class MainActivity extends Activity {
 
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
-        col.setPadding(dp(20), dp(28), dp(20), dp(24));
+        col.setPadding(dp(20), dp(18), dp(20), dp(24));
         homeScroll.addView(col, new FrameLayout.LayoutParams(-1, -2));
 
         ImageView logo = new ImageView(this);
@@ -482,14 +482,14 @@ public class MainActivity extends Activity {
         } else {
             logo.setImageResource(R.drawable.logo);
         }
-        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(dp(76), dp(76));
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(dp(64), dp(64));
         llp.gravity = Gravity.CENTER_HORIZONTAL;
         col.addView(logo, llp);
 
         TextView title = Ui.text(this, cur.incognito ? L.t("private_title") : L.t("greet"), 22, fg, true);
         title.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(-1, -2);
-        tl.topMargin = dp(14);
+        tl.topMargin = dp(10);
         col.addView(title, tl);
         TextView sub = Ui.text(this, cur.incognito ? L.t("private_info") : L.t("greet_sub"), 14, fg2, false);
         sub.setGravity(Gravity.CENTER);
@@ -517,7 +517,7 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { focusAddress(); }
         });
         LinearLayout.LayoutParams sbl = new LinearLayout.LayoutParams(-1, dp(52));
-        sbl.topMargin = dp(22);
+        sbl.topMargin = dp(18);
         col.addView(sb, sbl);
 
         if (!isOnline()) {
@@ -531,11 +531,29 @@ public class MainActivity extends Activity {
         }
 
         // speed dial
+        LinearLayout sdH = new LinearLayout(this);
+        sdH.setOrientation(LinearLayout.HORIZONTAL);
+        sdH.setGravity(Gravity.CENTER_VERTICAL);
         TextView sdT = Ui.text(this, L.t("shortcuts"), 15, fg, true);
+        sdH.addView(sdT, new LinearLayout.LayoutParams(0, -2, 1));
+        LinearLayout addB = new LinearLayout(this);
+        addB.setOrientation(LinearLayout.HORIZONTAL);
+        addB.setGravity(Gravity.CENTER_VERTICAL);
+        addB.setPadding(dp(10), dp(6), dp(12), dp(6));
+        addB.setBackground(Ui.rippleRound(Color.TRANSPARENT, dp(16)));
+        ImageView addI = new ImageView(this);
+        addI.setImageResource(R.drawable.ic_add);
+        addI.setColorFilter(Ui.accent);
+        addB.addView(addI, new LinearLayout.LayoutParams(dp(18), dp(18)));
+        TextView addT = Ui.text(this, L.t("add_shortcut"), 13, Ui.accent, true);
+        addT.setPadding(dp(4), 0, 0, 0);
+        addB.addView(addT);
+        addB.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { addDialDialog(); } });
+        sdH.addView(addB);
         LinearLayout.LayoutParams sdl = new LinearLayout.LayoutParams(-1, -2);
-        sdl.topMargin = dp(26);
-        sdl.bottomMargin = dp(10);
-        col.addView(sdT, sdl);
+        sdl.topMargin = dp(20);
+        sdl.bottomMargin = dp(6);
+        col.addView(sdH, sdl);
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(4);
@@ -547,7 +565,7 @@ public class MainActivity extends Activity {
                 @Override public boolean onLongClick(View v) { confirmRemoveDial(it); return true; }
             }, 0), cellLp());
         }
-        if (sd.size() < 16) {
+        if (sd.isEmpty()) {
             grid.addView(dialCell(L.t("add_shortcut"), null, fg, card, new View.OnClickListener() {
                 @Override public void onClick(View v) { addDialDialog(); }
             }, null, R.drawable.ic_add), cellLp());
@@ -581,7 +599,7 @@ public class MainActivity extends Activity {
             quick.addView(q, new LinearLayout.LayoutParams(0, -2, 1));
         }
         LinearLayout.LayoutParams ql = new LinearLayout.LayoutParams(-1, -2);
-        ql.topMargin = dp(18);
+        ql.topMargin = dp(12);
         col.addView(quick, ql);
 
         // recent
@@ -590,7 +608,7 @@ public class MainActivity extends Activity {
             if (!recent.isEmpty()) {
                 TextView rt = Ui.text(this, L.t("recent"), 15, fg, true);
                 LinearLayout.LayoutParams rl = new LinearLayout.LayoutParams(-1, -2);
-                rl.topMargin = dp(24);
+                rl.topMargin = dp(20);
                 rl.bottomMargin = dp(6);
                 col.addView(rt, rl);
                 LinearLayout box = new LinearLayout(this);
@@ -620,7 +638,7 @@ public class MainActivity extends Activity {
     private GridLayout.LayoutParams cellLp() {
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams(GridLayout.spec(GridLayout.UNDEFINED, 1f), GridLayout.spec(GridLayout.UNDEFINED, 1f));
         lp.width = 0;
-        lp.setMargins(0, dp(4), 0, dp(10));
+        lp.setMargins(0, dp(2), 0, dp(4));
         return lp;
     }
 
@@ -868,13 +886,13 @@ public class MainActivity extends Activity {
                 row.setOrientation(LinearLayout.HORIZONTAL);
                 list.addView(row, new LinearLayout.LayoutParams(-1, -2));
             }
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(250), 1);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(232), 1);
             lp.setMargins(dp(6), dp(6), dp(6), dp(6));
             row.addView(tabCard(tabs.get(i)), lp);
         }
         if (tabs.size() % 2 == 1 && row != null) {
             View sp = new View(this);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(250), 1);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(232), 1);
             lp.setMargins(dp(6), dp(6), dp(6), dp(6));
             row.addView(sp, lp);
         }

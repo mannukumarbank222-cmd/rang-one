@@ -26,8 +26,6 @@ adb shell am start -W -n $A -a android.intent.action.VIEW -d "https://hi.wikiped
 sleep 12
 adb shell am start -W -n $A -a android.intent.action.VIEW -d "https://www.india.gov.in/"
 sleep 12
-adb shell am start -W -n $A -a android.intent.action.VIEW -d "https://www.isro.gov.in/"
-sleep 12
 adb shell am start -W -n $A -a app.bharosa.browser.NEW_PRIVATE_TAB
 sleep 3
 adb shell input text "hi.wikipedia.org"
