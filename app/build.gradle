@@ -1,0 +1,18 @@
+plugins { id 'com.android.application' }
+android {
+  namespace 'app.bharosa.browser'
+  compileSdk 34
+  defaultConfig { applicationId 'app.bharosa.browser'; minSdk 24; targetSdk 34; versionCode 11; versionName '4.7' }
+  signingConfigs {
+    release {
+      storeFile file(System.getenv('KS_PATH') ?: 'none.p12')
+      storePassword System.getenv('KS_PASS') ?: ''
+      keyAlias 'rangone'
+      keyPassword System.getenv('KS_PASS') ?: ''
+      storeType 'pkcs12'
+    }
+  }
+  buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+  lint { abortOnError false; checkReleaseBuilds false }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}

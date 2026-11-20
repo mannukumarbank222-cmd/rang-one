@@ -1,0 +1,7 @@
+<resources>
+  <string name="app_name">Rang One</string>
+  <string name="sc_new_tab">नया टैब</string>
+  <string name="sc_private">प्राइवेट टैब</string>
+  <string name="sc_bookmarks">बुकमार्क</string>
+  <string name="sc_history">हिस्ट्री</string>
+</resources>

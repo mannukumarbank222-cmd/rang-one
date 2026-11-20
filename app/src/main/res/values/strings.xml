@@ -1,0 +1,7 @@
+<resources>
+  <string name="app_name">Rang One</string>
+  <string name="sc_new_tab">New tab</string>
+  <string name="sc_private">Private tab</string>
+  <string name="sc_bookmarks">Bookmarks</string>
+  <string name="sc_history">History</string>
+</resources>

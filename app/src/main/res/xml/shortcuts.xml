@@ -1,0 +1,14 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+  <shortcut android:shortcutId="new_tab" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/sc_new_tab">
+    <intent android:action="app.bharosa.browser.NEW_TAB" android:targetPackage="app.bharosa.browser" android:targetClass="app.bharosa.browser.MainActivity"/>
+  </shortcut>
+  <shortcut android:shortcutId="private_tab" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/sc_private">
+    <intent android:action="app.bharosa.browser.NEW_PRIVATE_TAB" android:targetPackage="app.bharosa.browser" android:targetClass="app.bharosa.browser.MainActivity"/>
+  </shortcut>
+  <shortcut android:shortcutId="bookmarks" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/sc_bookmarks">
+    <intent android:action="app.bharosa.browser.BOOKMARKS" android:targetPackage="app.bharosa.browser" android:targetClass="app.bharosa.browser.MainActivity"/>
+  </shortcut>
+  <shortcut android:shortcutId="history" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/sc_history">
+    <intent android:action="app.bharosa.browser.HISTORY" android:targetPackage="app.bharosa.browser" android:targetClass="app.bharosa.browser.MainActivity"/>
+  </shortcut>
+</shortcuts>
