@@ -52,6 +52,7 @@ public final class DealViews {
         LinearLayout col = col(a);
         FrameLayout imgBox = new FrameLayout(a);
         SquareImageView iv = new SquareImageView(a);
+        iv.ratio = 0.72f;
         imgBox.addView(iv, new FrameLayout.LayoutParams(MATCH, WRAP));
         ImageLoader.get(a).load(d.image, iv, d.category, d.title);
         TextView off = offBadge(a, d.percentOff());

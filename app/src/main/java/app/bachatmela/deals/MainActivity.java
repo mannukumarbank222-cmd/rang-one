@@ -398,7 +398,7 @@ public class MainActivity extends Activity {
                 tile.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) { cat = key; store = null; query = ""; show(HOME); }
                 });
-                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, WRAP, 1);
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, MATCH, 1);
                 p.setMargins(dp(this, 6), dp(this, 6), dp(this, 6), dp(this, 6));
                 r.addView(tile, p);
             }
