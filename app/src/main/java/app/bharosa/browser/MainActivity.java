@@ -1,5 +1,6 @@
 package app.bharosa.browser;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -11,9 +12,18 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.Typeface;
+import android.graphics.drawable.Icon;
 import android.graphics.drawable.GradientDrawable;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -23,6 +33,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Message;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -39,11 +52,14 @@ import android.view.inputmethod.InputMethodManager;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
+import android.webkit.MimeTypeMap;
 import android.webkit.PermissionRequest;
 import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -57,9 +73,14 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends Activity {
     static final String ACTION_NEW_TAB = "app.bharosa.browser.NEW_TAB";
@@ -73,6 +94,7 @@ public class MainActivity extends Activity {
     static final int REQ_LIBRARY = 11;
     static final int REQ_FILE = 12;
     static final int REQ_SETTINGS = 13;
+    static final int REQ_PERMS = 14;
 
     static final String DESKTOP_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
@@ -95,6 +117,9 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCallback;
     private String themeAtStart, langAtStart;
     private Dialog menuDialog;
+    private LinearLayout mediaFab;
+    private TextView mediaFabText;
+    private Runnable pendingDownload;
 
     // ------------------------------------------------------------------ lifecycle
 
@@ -153,7 +178,7 @@ public class MainActivity extends Activity {
             recreate();
             return;
         }
-        for (Tab t : tabs) if (t.web != null) applySettings(t);
+        for (Tab t : tabs) if (t.web != null) { applySettings(t); if (!t.home) injectNight(t); }
         if (cur != null && cur.web != null) cur.web.onResume();
         if (cur != null && cur.home) showHome();
     }
@@ -290,6 +315,34 @@ public class MainActivity extends Activity {
         homeScroll.setFillViewport(true);
         homeScroll.setBackgroundColor(Ui.bg);
         content.addView(homeScroll, new FrameLayout.LayoutParams(-1, -1));
+
+        // floating "Download video" button, shown when the page has video / audio
+        mediaFab = new LinearLayout(this);
+        mediaFab.setOrientation(LinearLayout.HORIZONTAL);
+        mediaFab.setGravity(Gravity.CENTER_VERTICAL);
+        mediaFab.setPadding(dp(14), 0, dp(18), 0);
+        mediaFab.setBackground(Ui.rippleRound(Ui.accent, dp(24)));
+        mediaFab.setElevation(dp(6));
+        mediaFab.setVisibility(View.GONE);
+        ImageView fi = new ImageView(this);
+        fi.setImageResource(R.drawable.ic_download);
+        fi.setColorFilter(Color.WHITE);
+        mediaFab.addView(fi, new LinearLayout.LayoutParams(dp(22), dp(22)));
+        mediaFabText = Ui.single(this, L.t("dl_video"), 14, Color.WHITE, true);
+        mediaFabText.setPadding(dp(8), 0, 0, 0);
+        mediaFab.addView(mediaFabText);
+        mediaFab.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { showMediaList(); } });
+        mediaFab.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override public boolean onLongClick(View v) {
+                if (cur != null) cur.mediaHidden = true;
+                updateMediaFab();
+                toast(L.t("hide"));
+                return true;
+            }
+        });
+        FrameLayout.LayoutParams flp = new FrameLayout.LayoutParams(-2, dp(48), Gravity.BOTTOM | Gravity.END);
+        flp.setMargins(dp(16), dp(16), dp(16), dp(16));
+        content.addView(mediaFab, flp);
 
         main.addView(Ui.divider(this));
         // bottom bar
@@ -445,6 +498,19 @@ public class MainActivity extends Activity {
         boolean canFwd = cur.web != null && (cur.home ? true : cur.web.canGoForward());
         fwdBtn.setAlpha(canFwd ? 1f : 0.35f);
         CookieManager.getInstance().setAcceptCookie(!priv);
+        updateMediaFab();
+    }
+
+    /** Shows the floating download button while the current page has video / audio. */
+    private void updateMediaFab() {
+        if (mediaFab == null) return;
+        boolean show = cur != null && !cur.home && cur.web != null && !cur.offlineView && !cur.mediaHidden && !cur.media.isEmpty()
+                && tabSwitcher.getVisibility() != View.VISIBLE;
+        if (show) {
+            int n = cur.media.size();
+            mediaFabText.setText(String.format(Locale.ROOT, L.t("dl_video_n"), n));
+        }
+        mediaFab.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     // ------------------------------------------------------------------ home screen
@@ -1071,12 +1137,58 @@ public class MainActivity extends Activity {
         s.setCacheMode(t.incognito ? WebSettings.LOAD_NO_CACHE : WebSettings.LOAD_DEFAULT);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         s.setUserAgentString(t.desktop ? DESKTOP_UA : null);
+        s.setTextZoom(Prefs.textZoom(this));
+        s.setBlockNetworkImage(Prefs.dataSaver(this));
         if (Build.VERSION.SDK_INT >= 33) {
+            // Only works while the app itself uses the dark theme; otherwise web night mode uses CSS (see nightCss()).
             s.setAlgorithmicDarkeningAllowed(Ui.dark);
         } else if (Build.VERSION.SDK_INT >= 29) {
             s.setForceDark(Ui.dark ? WebSettings.FORCE_DARK_AUTO : WebSettings.FORCE_DARK_OFF);
         }
+        AdBlock.enabled = Prefs.adBlock(this);
         CookieManager.getInstance().setAcceptThirdPartyCookies(t.web, !t.incognito);
+    }
+
+    /** Night mode is drawn with an injected style sheet unless the WebView darkens the page itself (API 33+, dark app theme). */
+    private boolean nightCss() {
+        return Prefs.webDark(this) && !(Build.VERSION.SDK_INT >= 33 && Ui.dark);
+    }
+
+    private void injectNight(Tab t) {
+        if (t.web == null || t.offlineView || !Prefs.js(this)) return;
+        t.web.evaluateJavascript(WebJs.night(nightCss()), null);
+    }
+
+    private void injectMediaScan(Tab t) {
+        if (t.web == null || t.offlineView || !Prefs.js(this)) return;
+        t.web.evaluateJavascript(WebJs.MEDIA_SCAN, null);
+    }
+
+    /** Called on the UI thread for every media URL found on a tab's page. */
+    private void addMedia(Tab t, String url, String hint, String label) {
+        if (url == null || url.isEmpty() || t.media.containsKey(url) || t.media.size() >= 40) return;
+        if (url.startsWith("data:") || url.startsWith("javascript:")) return;
+        String kind = WebJs.kindOf(url, hint);
+        if ("blob".equals(kind)) {
+            // one entry is enough to explain that the stream can't be saved
+            for (String[] m : t.media.values()) if ("blob".equals(m[1])) return;
+        }
+        t.media.put(url, new String[]{url, kind, label == null ? "" : label});
+        if (t == cur) updateMediaFab();
+    }
+
+    /** JavaScript bridge: pages report the media URLs the scan script finds. Runs on a WebView thread. */
+    final class MediaBridge {
+        private final Tab tab;
+
+        MediaBridge(Tab tab) { this.tab = tab; }
+
+        @JavascriptInterface
+        public void report(final String url, final String kind, final String label, final String pageTitle) {
+            runOnUiThread(new Runnable() {
+                @Override public void run() { if (tabs.contains(tab)) addMedia(tab, url, kind, label); }
+            });
+        }
     }
 
     private void createWeb(final Tab t) {
@@ -1085,7 +1197,30 @@ public class MainActivity extends Activity {
         t.desktop = Prefs.desktopDefault(this);
         w.setBackgroundColor(Ui.dark ? Color.BLACK : Color.WHITE);
         applySettings(t);
+        w.addJavascriptInterface(new MediaBridge(t), WebJs.BRIDGE);
         w.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
+                // Runs on a WebView network thread.
+                try {
+                    Uri uri = req.getUrl();
+                    String sc = uri.getScheme();
+                    if (!"http".equals(sc) && !"https".equals(sc)) return null;
+                    String host = uri.getHost();
+                    if (!req.isForMainFrame() && AdBlock.enabled && AdBlock.isAd(host)) {
+                        t.blocked.incrementAndGet();
+                        return AdBlock.empty();
+                    }
+                    if (!req.isForMainFrame()) detectMediaRequest(t, uri.toString(), host, req.getRequestHeaders());
+                } catch (Exception ignored) { }
+                return null;
+            }
+
+            @Override
+            public void onPageCommitVisible(WebView view, String url) {
+                if (nightCss()) injectNight(t);
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 String u = req.getUrl().toString();
@@ -1105,6 +1240,9 @@ public class MainActivity extends Activity {
                     }
                     t.url = url;
                 }
+                t.media.clear();
+                t.mediaHidden = false;
+                t.blocked.set(0);
                 if (t == cur) {
                     progress.setVisibility(View.VISIBLE);
                     actionIcon.setImageResource(R.drawable.ic_close);
@@ -1120,11 +1258,17 @@ public class MainActivity extends Activity {
                     updateBars();
                 }
                 if (!t.incognito && !t.offlineView && url != null) Db.get(MainActivity.this).addHistory(view.getTitle(), url);
+                injectMediaScan(t);
+                if (nightCss()) injectNight(t);
             }
         });
         w.setWebChromeClient(new WebChromeClient() {
             @Override public void onProgressChanged(WebView view, int p) {
                 if (t == cur) progress.setProgress(p);
+            }
+
+            @Override public void onReceivedIcon(WebView view, Bitmap icon) {
+                t.favicon = icon;
             }
 
             @Override public void onReceivedTitle(WebView view, String title) {
@@ -1175,14 +1319,19 @@ public class MainActivity extends Activity {
                 customCallback = callback;
                 fullscreenHolder.addView(view, new FrameLayout.LayoutParams(-1, -1));
                 fullscreenHolder.setVisibility(View.VISIBLE);
-                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                // Full-screen video turns to landscape (either side, follows the sensor); restored on exit.
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
             }
 
             @Override public void onHideCustomView() { exitFullscreen(); }
         });
         w.setDownloadListener(new DownloadListener() {
             @Override public void onDownloadStart(String url, String ua, String cd, String mime, long len) {
-                askDownload(t, url, ua, cd, mime, len);
+                if (url != null && (url.startsWith("blob:") || url.startsWith("data:"))) { showStreamInfo(null); return; }
+                askDownload(t, url, ua, cd, mime, len, t.url);
             }
         });
         w.setFindListener(new WebView.FindListener() {
@@ -1196,6 +1345,25 @@ public class MainActivity extends Activity {
         });
     }
 
+    /** Network-thread check: is this sub-request a video / audio file? */
+    private void detectMediaRequest(final Tab t, final String url, String host, Map<String, String> headers) {
+        if (host != null && (host.endsWith("googlevideo.com") || host.endsWith("youtube.com"))) return; // segmented streams
+        String p = WebJs.path(url);
+        if (WebJs.SEGMENT_EXT.matcher(p).matches()) return;
+        boolean media = WebJs.MEDIA_EXT.matcher(p).matches();
+        if (!media && headers != null && !WebJs.NON_MEDIA_EXT.matcher(p).matches()) {
+            // <video>/<audio> elements fetch their file with a Range request
+            boolean range = false;
+            for (String k : headers.keySet()) if ("range".equalsIgnoreCase(k)) range = true;
+            String last = p.substring(p.lastIndexOf('/') + 1);
+            media = range && last.indexOf('.') < 0 && last.length() > 0;
+        }
+        if (!media) return;
+        runOnUiThread(new Runnable() {
+            @Override public void run() { if (tabs.contains(t)) addMedia(t, url, "", ""); }
+        });
+    }
+
     private void exitFullscreen() {
         if (customView == null) return;
         fullscreenHolder.removeView(customView);
@@ -1203,16 +1371,25 @@ public class MainActivity extends Activity {
         customView = null;
         if (customCallback != null) customCallback.onCustomViewHidden();
         customCallback = null;
-        getWindow().getDecorView().setSystemUiVisibility(0);
+        int ui = 0;
+        if (!Ui.dark && Build.VERSION.SDK_INT >= 26) ui |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        getWindow().getDecorView().setSystemUiVisibility(ui);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         updateBars();
     }
 
     private boolean onWebLongPress(final Tab t) {
         WebView.HitTestResult r = t.web.getHitTestResult();
         if (r == null) return false;
+        int type = r.getType();
+        if (type == WebView.HitTestResult.UNKNOWN_TYPE) {
+            // Long-press on a <video>/<audio>: ask the page which media element is under the finger.
+            longPressMedia(t);
+            return false;
+        }
         final String extra = r.getExtra();
         if (extra == null) return false;
-        int type = r.getType();
         if (type == WebView.HitTestResult.SRC_ANCHOR_TYPE || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
             String link = extra;
             if (type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
@@ -1238,13 +1415,40 @@ public class MainActivity extends Activity {
             new AlertDialog.Builder(this).setItems(items, new DialogInterface.OnClickListener() {
                 @Override public void onClick(DialogInterface d, int which) {
                     if (which == 0) openInNewTab(extra, t.incognito);
-                    else if (which == 1) askDownload(t, extra, t.web.getSettings().getUserAgentString(), null, null, -1);
+                    else if (which == 1) askDownload(t, extra, t.web.getSettings().getUserAgentString(), null, null, -1, t.url);
                     else copy(extra);
                 }
             }).show();
             return true;
         }
         return false;
+    }
+
+    private void longPressMedia(final Tab t) {
+        if (t.web == null || !Prefs.js(this) || t.offlineView) return;
+        t.web.evaluateJavascript(WebJs.TOUCHED_MEDIA, new ValueCallback<String>() {
+            @Override public void onReceiveValue(String value) {
+                String v = jsString(value);
+                if (v == null || v.isEmpty()) return;
+                int bar = v.indexOf('|');
+                if (bar < 0 || bar == v.length() - 1) return;
+                String kind = v.substring(0, bar);
+                String u = v.substring(bar + 1);
+                addMedia(t, u, kind, "");
+                mediaActions(t, new String[]{u, WebJs.kindOf(u, kind), ""});
+            }
+        });
+    }
+
+    /** Decodes a JSON string literal returned by evaluateJavascript. */
+    static String jsString(String value) {
+        if (value == null || "null".equals(value)) return null;
+        try {
+            Object o = new JSONTokener(value).nextValue();
+            return o instanceof String ? (String) o : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void openExternal(final String url, WebView view) {
@@ -1277,7 +1481,8 @@ public class MainActivity extends Activity {
 
     // ------------------------------------------------------------------ downloads & offline
 
-    private void askDownload(final Tab t, final String url, final String ua, final String cd, final String mime, long len) {
+    private void askDownload(final Tab t, final String url, final String ua, final String cd, final String mime, long len, final String referer) {
+        if (url != null && (url.startsWith("blob:") || url.startsWith("data:"))) { showStreamInfo(null); return; }
         if (url == null || !(url.startsWith("http://") || url.startsWith("https://"))) {
             toast(L.t("download_failed"));
             return;
@@ -1286,27 +1491,69 @@ public class MainActivity extends Activity {
         String size = len > 0 ? " (" + Formatter.formatShortFileSize(this, len) + ")" : "";
         new AlertDialog.Builder(this).setTitle(L.t("download_q")).setMessage(name + size)
                 .setPositiveButton(L.t("download"), new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) { startDownload(t, url, ua, mime, name); }
+                    @Override public void onClick(DialogInterface d, int w) {
+                        withDownloadPermission(new Runnable() {
+                            @Override public void run() { startDownload(t, url, ua, mime, name, referer); }
+                        });
+                    }
                 }).setNegativeButton(L.t("cancel"), null).show();
     }
 
-    private void startDownload(Tab t, String url, String ua, String mime, String name) {
+    /** Asks for storage (Android 7-9) and notification (Android 13+) permission once, then runs the download. */
+    private void withDownloadPermission(Runnable r) {
+        ArrayList<String> need = new ArrayList<>();
+        if (Build.VERSION.SDK_INT <= 28 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            need.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if (Build.VERSION.SDK_INT >= 33 && !Prefs.askedNotif(this) && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+            need.add("android.permission.POST_NOTIFICATIONS");
+            Prefs.setAskedNotif(this);
+        }
+        if (need.isEmpty()) { r.run(); return; }
+        pendingDownload = r;
+        requestPermissions(need.toArray(new String[0]), REQ_PERMS);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int req, String[] perms, int[] results) {
+        super.onRequestPermissionsResult(req, perms, results);
+        if (req != REQ_PERMS) return;
+        for (int i = 0; i < perms.length && i < results.length; i++) {
+            if (Manifest.permission.WRITE_EXTERNAL_STORAGE.equals(perms[i]) && results[i] != PackageManager.PERMISSION_GRANTED)
+                Toast.makeText(this, L.t("perm_storage"), Toast.LENGTH_LONG).show();
+        }
+        Runnable r = pendingDownload;
+        pendingDownload = null;
+        if (r != null) r.run(); // without storage permission the file goes to the app folder
+    }
+
+    private void startDownload(Tab t, String url, String ua, String mime, String name, String referer) {
         try {
             DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
             DownloadManager.Request r = new DownloadManager.Request(Uri.parse(url));
-            if (mime != null) r.setMimeType(mime);
+            if (mime == null || mime.isEmpty() || "application/octet-stream".equals(mime)) {
+                String ext = MimeTypeMap.getFileExtensionFromUrl(name);
+                String guess = ext == null ? null : MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext.toLowerCase(Locale.ROOT));
+                if (guess != null) mime = guess;
+            }
+            if (mime != null && !mime.isEmpty()) r.setMimeType(mime);
+            if (ua == null || ua.isEmpty()) ua = t.web != null ? t.web.getSettings().getUserAgentString() : null;
             if (ua != null) r.addRequestHeader("User-Agent", ua);
-            if (!t.incognito) {
+            if (referer != null && referer.startsWith("http")) r.addRequestHeader("Referer", referer);
+            if (!t.incognito) { // private tabs keep no cookies, so none are sent
                 String ck = CookieManager.getInstance().getCookie(url);
-                if (ck != null) r.addRequestHeader("Cookie", ck);
+                if (ck != null && !ck.isEmpty()) r.addRequestHeader("Cookie", ck);
             }
             r.setTitle(name);
             r.setDescription(Ui.hostOf(url));
             r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            if (Build.VERSION.SDK_INT >= 29) {
+            r.setAllowedOverMetered(true);
+            r.setAllowedOverRoaming(true);
+            boolean publicDir = Build.VERSION.SDK_INT >= 29
+                    || checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            if (publicDir) {
                 r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name);
+                if (Build.VERSION.SDK_INT < 29) r.allowScanningByMediaScanner();
             } else {
-                // App-specific folder: no storage permission needed on Android 7-9.
                 r.setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, name);
             }
             long id = dm.enqueue(r);
@@ -1315,6 +1562,70 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             toast(L.t("download_failed"));
         }
+    }
+
+    // ------------------------------------------------------------------ video / audio downloader
+
+    private void showMediaList() {
+        final Tab t = cur;
+        if (t == null || t.web == null || t.home) { toast(L.t("open_page_first")); return; }
+        injectMediaScan(t); // pick up anything new for next time
+        if (t.media.isEmpty()) {
+            new AlertDialog.Builder(this).setTitle(L.t("dl_video")).setMessage(L.t("no_media")).setPositiveButton(L.t("ok"), null).show();
+            return;
+        }
+        // saveable files first, streams last
+        final ArrayList<String[]> items = new ArrayList<>();
+        for (String[] m : t.media.values()) if ("video".equals(m[1]) || "audio".equals(m[1])) items.add(m);
+        for (String[] m : t.media.values()) if (!"video".equals(m[1]) && !"audio".equals(m[1])) items.add(m);
+        CharSequence[] labels = new CharSequence[items.size()];
+        for (int i = 0; i < items.size(); i++) labels[i] = mediaLabel(items.get(i));
+        new AlertDialog.Builder(this).setTitle(L.t("media_found")).setItems(labels, new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface d, int w) { mediaActions(t, items.get(w)); }
+        }).setNegativeButton(L.t("close"), null).show();
+    }
+
+    private String mediaLabel(String[] m) {
+        String kind = m[1];
+        String head = "audio".equals(kind) ? L.t("k_audio") : "stream".equals(kind) ? L.t("k_stream") : "blob".equals(kind) ? L.t("k_blob") : L.t("k_video");
+        if ("blob".equals(kind)) return head;
+        String p = WebJs.path(m[0]);
+        String file = p.substring(p.lastIndexOf('/') + 1);
+        if (m[2] != null && !m[2].isEmpty()) file = m[2];
+        if (file.length() > 48) file = file.substring(0, 45) + "…";
+        return head + (file.isEmpty() ? "" : " · " + file) + "\n" + Ui.hostOf(m[0]);
+    }
+
+    /** Download / copy / play actions for one media item. */
+    private void mediaActions(final Tab t, final String[] m) {
+        final String url = m[0];
+        final String kind = m[1];
+        if ("blob".equals(kind) || "stream".equals(kind)) { showStreamInfo("stream".equals(kind) ? url : null); return; }
+        final String name = WebJs.fileName(t.title, url, kind);
+        new AlertDialog.Builder(this).setTitle("audio".equals(kind) ? L.t("k_audio") : L.t("dl_video")).setMessage(name + "\n\n" + Ui.hostOf(url))
+                .setPositiveButton(L.t("download"), new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        withDownloadPermission(new Runnable() {
+                            @Override public void run() { startDownload(t, url, null, null, name, t.url); }
+                        });
+                    }
+                })
+                .setNeutralButton(L.t("copy_video_link"), new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { copy(url); }
+                })
+                .setNegativeButton(L.t("open_video"), new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { openInNewTab(url, t.incognito); }
+                }).show();
+    }
+
+    /** Explains why HLS / blob streams can't be saved as one file. */
+    private void showStreamInfo(final String copyUrl) {
+        AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle(L.t("stream_title")).setMessage(L.t("stream_msg"))
+                .setPositiveButton(L.t("ok"), null);
+        if (copyUrl != null) b.setNeutralButton(L.t("copy_video_link"), new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface d, int w) { copy(copyUrl); }
+        });
+        b.show();
     }
 
     private void saveOffline() {
@@ -1405,19 +1716,36 @@ public class MainActivity extends Activity {
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(4);
         grid.setPadding(0, dp(8), 0, 0);
+        // page tools
+        int nMedia = page ? cur.media.size() : 0;
+        addMenuItem(d, grid, R.drawable.ic_video, nMedia > 0 ? String.format(Locale.ROOT, L.t("dl_video_n"), nMedia) : L.t("dl_video"), nMedia > 0, new Runnable() { public void run() { showMediaList(); } });
+        addMenuItem(d, grid, R.drawable.ic_reader, L.t("reader"), false, new Runnable() { public void run() { openReader(); } });
+        int nBlocked = page ? cur.blocked.get() : 0;
+        boolean ab = Prefs.adBlock(this);
+        addMenuItem(d, grid, R.drawable.ic_shield, ab && nBlocked > 0 ? L.t("adblock") + " · " + nBlocked : L.t("adblock"), ab, new Runnable() { public void run() { adBlockDialog(); } });
+        addMenuItem(d, grid, R.drawable.ic_night, L.t("night"), Prefs.webDark(this), new Runnable() { public void run() { toggleNight(); } });
+        addMenuItem(d, grid, R.drawable.ic_print, L.t("pdf"), false, new Runnable() { public void run() { savePdf(); } });
+        addMenuItem(d, grid, R.drawable.ic_homescreen, L.t("add_home"), false, new Runnable() { public void run() { addToHomeScreen(); } });
+        addMenuItem(d, grid, R.drawable.ic_translate, L.t("translate"), false, new Runnable() { public void run() { translatePage(); } });
+        addMenuItem(d, grid, R.drawable.ic_text, L.t("text_size"), Prefs.textZoom(this) != 100, new Runnable() { public void run() { textSizeDialog(); } });
+        addMenuItem(d, grid, R.drawable.ic_data, L.t("data_saver"), Prefs.dataSaver(this), new Runnable() { public void run() { toggleDataSaver(); } });
+        addMenuItem(d, grid, R.drawable.ic_search, L.t("find"), false, new Runnable() { public void run() { openFind(); } });
+        addMenuItem(d, grid, R.drawable.ic_desktop, L.t("desktop"), page && cur.desktop, new Runnable() { public void run() { toggleDesktop(); } });
+        addMenuItem(d, grid, R.drawable.ic_save, L.t("save_offline"), false, new Runnable() { public void run() { saveOffline(); } });
+        // browser
         addMenuItem(d, grid, R.drawable.ic_add, L.t("new_tab"), false, new Runnable() { public void run() { switchTo(newTab(false, true)); } });
         addMenuItem(d, grid, R.drawable.ic_private, L.t("new_private"), false, new Runnable() { public void run() { switchTo(newTab(true, true)); } });
+        addMenuItem(d, grid, R.drawable.ic_tabs, L.t("tabs"), false, new Runnable() { public void run() { showTabs(); } });
         addMenuItem(d, grid, R.drawable.ic_bookmark, L.t("bookmarks"), false, new Runnable() { public void run() { openLibrary(LibraryActivity.MODE_BOOKMARKS); } });
         addMenuItem(d, grid, R.drawable.ic_history, L.t("history"), false, new Runnable() { public void run() { openLibrary(LibraryActivity.MODE_HISTORY); } });
         addMenuItem(d, grid, R.drawable.ic_download, L.t("downloads"), false, new Runnable() { public void run() { openLibrary(LibraryActivity.MODE_DOWNLOADS); } });
         addMenuItem(d, grid, R.drawable.ic_folder, L.t("offline"), false, new Runnable() { public void run() { openLibrary(LibraryActivity.MODE_OFFLINE); } });
-        addMenuItem(d, grid, R.drawable.ic_save, L.t("save_offline"), false, new Runnable() { public void run() { saveOffline(); } });
-        addMenuItem(d, grid, R.drawable.ic_search, L.t("find"), false, new Runnable() { public void run() { openFind(); } });
-        addMenuItem(d, grid, R.drawable.ic_desktop, L.t("desktop"), page && cur.desktop, new Runnable() { public void run() { toggleDesktop(); } });
-        addMenuItem(d, grid, R.drawable.ic_tabs, L.t("tabs"), false, new Runnable() { public void run() { showTabs(); } });
         addMenuItem(d, grid, R.drawable.ic_settings, L.t("settings"), false, new Runnable() { public void run() { startActivityForResult(new Intent(MainActivity.this, SettingsActivity.class), REQ_SETTINGS); } });
         addMenuItem(d, grid, R.drawable.ic_info, L.t("about"), false, new Runnable() { public void run() { startActivity(new Intent(MainActivity.this, AboutActivity.class)); } });
-        sheet.addView(grid, new LinearLayout.LayoutParams(-1, -2));
+        addMenuItem(d, grid, R.drawable.ic_exit, L.t("exit"), false, new Runnable() { public void run() { finishAndRemoveTask(); } });
+        ScrollView gridScroll = new ScrollView(this);
+        gridScroll.addView(grid, new FrameLayout.LayoutParams(-1, -2));
+        sheet.addView(gridScroll, new LinearLayout.LayoutParams(-1, -2));
 
         d.setContentView(sheet);
         Window w = d.getWindow();
@@ -1454,6 +1782,165 @@ public class MainActivity extends Activity {
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams(GridLayout.spec(GridLayout.UNDEFINED, 1f), GridLayout.spec(GridLayout.UNDEFINED, 1f));
         lp.width = 0;
         grid.addView(c, lp);
+    }
+
+    private boolean requirePage() {
+        if (cur == null || cur.web == null || cur.home || cur.url == null) { toast(L.t("open_page_first")); return false; }
+        return true;
+    }
+
+    // ------------------------------------------------------------------ page tools
+
+    private void openReader() {
+        if (!requirePage()) return;
+        if (!Prefs.js(this)) { toast(L.t("reader_none")); return; }
+        final Tab t = cur;
+        t.web.evaluateJavascript(WebJs.READER, new ValueCallback<String>() {
+            @Override public void onReceiveValue(String value) {
+                List<String[]> blocks = null;
+                String title = t.title;
+                try {
+                    String js = jsString(value);
+                    if (js != null) {
+                        JSONObject j = new JSONObject(js);
+                        blocks = ReaderActivity.parse(j);
+                        String ti = j.optString("title", "");
+                        if (!ti.isEmpty()) title = ti;
+                    }
+                } catch (Exception ignored) { }
+                if (blocks == null) { toast(L.t("reader_none")); return; }
+                ReaderActivity.open(MainActivity.this, title, t.url, blocks);
+            }
+        });
+    }
+
+    private void adBlockDialog() {
+        final boolean on = Prefs.adBlock(this);
+        int n = cur != null && !cur.home ? cur.blocked.get() : 0;
+        String msg = on ? String.format(Locale.ROOT, L.t("adblock_count"), n) : L.t("adblock_off_msg");
+        new AlertDialog.Builder(this).setTitle(L.t("adblock_long")).setMessage(msg)
+                .setPositiveButton(on ? L.t("turn_off") : L.t("turn_on"), new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        Prefs.setAdBlock(MainActivity.this, !on);
+                        AdBlock.enabled = !on;
+                        if (cur != null && cur.web != null && !cur.home) cur.web.reload();
+                    }
+                }).setNegativeButton(L.t("close"), null).show();
+    }
+
+    private void toggleNight() {
+        boolean on = !Prefs.webDark(this);
+        Prefs.setWebDark(this, on);
+        for (Tab t : tabs) if (t.web != null && !t.home) { applySettings(t); injectNight(t); }
+        toast(on ? L.t("night_on") : L.t("night_off"));
+    }
+
+    private void toggleDataSaver() {
+        boolean on = !Prefs.dataSaver(this);
+        Prefs.setDataSaver(this, on);
+        for (Tab t : tabs) if (t.web != null) applySettings(t);
+        toast(on ? L.t("data_saver_on") : L.t("data_saver_off"));
+        if (!on && cur != null && cur.web != null && !cur.home) cur.web.reload();
+    }
+
+    private void textSizeDialog() {
+        final int[] z = Prefs.ZOOMS;
+        String[] names = new String[z.length];
+        int sel = 2;
+        int now = Prefs.textZoom(this);
+        for (int i = 0; i < z.length; i++) { names[i] = z[i] + "%"; if (z[i] == now) sel = i; }
+        new AlertDialog.Builder(this).setTitle(L.t("text_size")).setSingleChoiceItems(names, sel, new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface d, int w) {
+                Prefs.setTextZoom(MainActivity.this, z[w]);
+                for (Tab t : tabs) if (t.web != null) t.web.getSettings().setTextZoom(z[w]);
+                d.dismiss();
+            }
+        }).setNeutralButton(L.t("reset"), new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface d, int w) {
+                Prefs.setTextZoom(MainActivity.this, 100);
+                for (Tab t : tabs) if (t.web != null) t.web.getSettings().setTextZoom(100);
+            }
+        }).setNegativeButton(L.t("cancel"), null).show();
+    }
+
+    private void savePdf() {
+        if (!requirePage()) return;
+        try {
+            PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+            String name = (cur.title == null || cur.title.isEmpty() ? Ui.hostOf(cur.url) : cur.title);
+            name = name.replaceAll("[\\\\/:*?\"<>|]+", " ").trim();
+            if (name.length() > 60) name = name.substring(0, 60);
+            PrintDocumentAdapter ad = cur.web.createPrintDocumentAdapter(name);
+            pm.print(name, ad, new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).build());
+        } catch (Exception e) {
+            toast(L.t("save_failed"));
+        }
+    }
+
+    private void translatePage() {
+        if (!requirePage()) return;
+        if (cur.offlineView || !cur.url.startsWith("http")) { toast(L.t("open_page_first")); return; }
+        final String[] codes = {"hi", "en", "bn", "mr", "te", "ta", "gu", "kn", "ml", "pa", "or", "ur"};
+        String[] names = {"हिंदी", "English", "বাংলা", "मराठी", "తెలుగు", "தமிழ்", "ગુજરાતી", "ಕನ್ನಡ", "മലയാളം", "ਪੰਜਾਬੀ", "ଓଡ଼ିଆ", "اردو"};
+        final String page = cur.url;
+        new AlertDialog.Builder(this).setTitle(L.t("translate_to")).setItems(names, new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface d, int w) {
+                load(cur, "https://translate.google.com/translate?sl=auto&tl=" + codes[w] + "&hl=" + codes[w] + "&u=" + Uri.encode(page));
+            }
+        }).setNegativeButton(L.t("cancel"), null).show();
+    }
+
+    private void addToHomeScreen() {
+        if (!requirePage()) return;
+        if (cur.offlineView || !cur.url.startsWith("http")) { toast(L.t("open_page_first")); return; }
+        if (Build.VERSION.SDK_INT < 26) { toast(L.t("not_supported")); return; }
+        try {
+            ShortcutManager sm = getSystemService(ShortcutManager.class);
+            if (sm == null || !sm.isRequestPinShortcutSupported()) { toast(L.t("not_supported")); return; }
+            String label = cur.title == null || cur.title.trim().isEmpty() ? Ui.hostOf(cur.url) : cur.title.trim();
+            String shortLabel = label.length() > 24 ? label.substring(0, 24).trim() : label;
+            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(cur.url));
+            i.setClass(this, MainActivity.class);
+            ShortcutInfo info = new ShortcutInfo.Builder(this, "web_" + Integer.toHexString(cur.url.hashCode()))
+                    .setShortLabel(shortLabel)
+                    .setLongLabel(label)
+                    .setIcon(Icon.createWithBitmap(shortcutIcon(cur)))
+                    .setIntent(i)
+                    .build();
+            sm.requestPinShortcut(info, null);
+            toast(L.t("add_home_done"));
+        } catch (Exception e) {
+            toast(L.t("not_supported"));
+        }
+    }
+
+    /** Site icon on a white circle, or a coloured letter tile when the site has no usable icon. */
+    private Bitmap shortcutIcon(Tab t) {
+        int size = 192;
+        Bitmap b = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(b);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        Bitmap fav = t.favicon;
+        if (fav != null && fav.getWidth() >= 32) {
+            p.setColor(Color.WHITE);
+            c.drawCircle(size / 2f, size / 2f, size / 2f, p);
+            float inset = size * 0.22f;
+            Paint fp = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+            c.drawBitmap(fav, null, new RectF(inset, inset, size - inset, size - inset), fp);
+        } else {
+            p.setColor(Ui.colorFor(t.url));
+            c.drawCircle(size / 2f, size / 2f, size / 2f, p);
+            String host = Ui.hostOf(t.url);
+            String letter = host.isEmpty() ? "?" : host.substring(0, 1).toUpperCase(Locale.ROOT);
+            p.setColor(Color.WHITE);
+            p.setTypeface(Typeface.DEFAULT_BOLD);
+            p.setTextSize(size * 0.45f);
+            p.setTextAlign(Paint.Align.CENTER);
+            Rect r = new Rect();
+            p.getTextBounds(letter, 0, letter.length(), r);
+            c.drawText(letter, size / 2f, size / 2f + r.height() / 2f, p);
+        }
+        return b;
     }
 
     private void toggleBookmark() {

@@ -54,6 +54,12 @@ public class SettingsActivity extends Activity {
         row(R.drawable.ic_info, L.t("language"), "hi".equals(lg) ? "हिंदी" : "en".equals(lg) ? "English" : L.t("lang_auto"), new View.OnClickListener() {
             @Override public void onClick(View v) { chooseLang(); }
         });
+        toggle(L.t("adblock_long"), Prefs.adBlock(this), new Toggle() { public void set(boolean v) { Prefs.setAdBlock(SettingsActivity.this, v); AdBlock.enabled = v; } });
+        toggle(L.t("night_long"), Prefs.webDark(this), new Toggle() { public void set(boolean v) { Prefs.setWebDark(SettingsActivity.this, v); } });
+        toggle(L.t("data_saver_long"), Prefs.dataSaver(this), new Toggle() { public void set(boolean v) { Prefs.setDataSaver(SettingsActivity.this, v); } });
+        row(R.drawable.ic_text, L.t("text_size"), Prefs.textZoom(this) + "%", new View.OnClickListener() {
+            @Override public void onClick(View v) { chooseTextSize(); }
+        });
         toggle(L.t("block_popups"), Prefs.blockPopups(this), new Toggle() { public void set(boolean v) { Prefs.setBlockPopups(SettingsActivity.this, v); } });
         toggle(L.t("js"), Prefs.js(this), new Toggle() { public void set(boolean v) { Prefs.setJs(SettingsActivity.this, v); } });
         toggle(L.t("desktop_default"), Prefs.desktopDefault(this), new Toggle() { public void set(boolean v) { Prefs.setDesktopDefault(SettingsActivity.this, v); } });
@@ -116,6 +122,16 @@ public class SettingsActivity extends Activity {
         for (int i = 0; i < Prefs.ENGINE_IDS.length; i++) if (Prefs.ENGINE_IDS[i].equals(cur)) sel = i;
         new AlertDialog.Builder(this).setTitle(L.t("search_engine")).setSingleChoiceItems(Prefs.ENGINE_NAMES, sel, new DialogInterface.OnClickListener() {
             @Override public void onClick(DialogInterface d, int w) { Prefs.setEngine(SettingsActivity.this, Prefs.ENGINE_IDS[w]); d.dismiss(); recreate(); }
+        }).show();
+    }
+
+    private void chooseTextSize() {
+        final int[] z = Prefs.ZOOMS;
+        String[] names = new String[z.length];
+        int sel = 2;
+        for (int i = 0; i < z.length; i++) { names[i] = z[i] + "%"; if (z[i] == Prefs.textZoom(this)) sel = i; }
+        new AlertDialog.Builder(this).setTitle(L.t("text_size")).setSingleChoiceItems(names, sel, new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface d, int w) { Prefs.setTextZoom(SettingsActivity.this, z[w]); d.dismiss(); recreate(); }
         }).show();
     }
 

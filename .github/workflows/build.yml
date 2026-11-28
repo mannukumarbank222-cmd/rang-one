@@ -20,9 +20,9 @@ jobs:
         env:
           KS_PATH: ${{ runner.temp }}/bharosa.keystore
           KS_PASS: ${{ secrets.KEYSTORE_PASS }}
-      - run: cp app/build/outputs/apk/release/app-release.apk RangOne_v4.7.apk
+      - run: cp app/build/outputs/apk/release/app-release.apk RangOne_v4.8.apk
       - uses: actions/upload-artifact@v4
-        with: { name: apk, path: RangOne_v4.7.apk }
+        with: { name: apk, path: RangOne_v4.8.apk }
   shots:
     needs: build
     runs-on: ubuntu-latest
@@ -62,9 +62,9 @@ jobs:
           if [ -d shots ]; then (cd shots && zip -r ../screenshots.zip .); else touch screenshots.zip; fi
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v4.7-build-${{ github.run_number }}
-          name: Rang One 4.7 build ${{ github.run_number }}
+          tag_name: v4.8-build-${{ github.run_number }}
+          name: Rang One 4.8 build ${{ github.run_number }}
           files: |
-            RangOne_v4.7.apk
+            RangOne_v4.8.apk
             screenshots.zip
           make_latest: true

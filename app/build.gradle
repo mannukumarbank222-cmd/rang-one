@@ -2,7 +2,7 @@ plugins { id 'com.android.application' }
 android {
   namespace 'app.bharosa.browser'
   compileSdk 34
-  defaultConfig { applicationId 'app.bharosa.browser'; minSdk 24; targetSdk 34; versionCode 11; versionName '4.7' }
+  defaultConfig { applicationId 'app.bharosa.browser'; minSdk 24; targetSdk 34; versionCode 12; versionName '4.8' }
   signingConfigs {
     release {
       storeFile file(System.getenv('KS_PATH') ?: 'none.keystore')

@@ -92,8 +92,8 @@ public final class L {
         p("version", "Version", "वर्ज़न");
         p("developer", "Developer", "डेवलपर");
         p("contact", "Contact", "संपर्क");
-        p("about_text", "Rang One is a light web browser made in India. It has tabs, private tabs, bookmarks, history, downloads, offline pages, find in page and desktop mode. Web pages are shown with Android System WebView.",
-                "Rang One भारत में बना एक हल्का वेब ब्राउज़र है। इसमें टैब, प्राइवेट टैब, बुकमार्क, हिस्ट्री, डाउनलोड, ऑफ़लाइन पेज, पेज में खोज और डेस्कटॉप मोड है। वेब पेज Android System WebView से दिखाए जाते हैं।");
+        p("about_text", "Rang One is a light web browser made in India. It has tabs, private tabs, bookmarks, history, a video and file downloader, a built-in ad and tracker blocker, reading mode, night mode for web pages, save as PDF, offline pages, translate, text size, data saver, home screen shortcuts, find in page and desktop mode. Web pages are shown with Android System WebView.",
+                "Rang One भारत में बना एक हल्का वेब ब्राउज़र है। इसमें टैब, प्राइवेट टैब, बुकमार्क, हिस्ट्री, वीडियो और फ़ाइल डाउनलोडर, बिल्ट-इन ऐड और ट्रैकर ब्लॉकर, पढ़ने का मोड, वेब पेज के लिए नाइट मोड, PDF सेव, ऑफ़लाइन पेज, अनुवाद, टेक्स्ट का आकार, डेटा सेवर, होम स्क्रीन शॉर्टकट, पेज में खोज और डेस्कटॉप मोड है। वेब पेज Android System WebView से दिखाए जाते हैं।");
         p("about_data", "No account or login. No ads. Your bookmarks, history, downloads list and offline pages are stored only on your phone. Searches go directly to the search engine you choose.",
                 "कोई अकाउंट या लॉगिन नहीं। कोई विज्ञापन नहीं। आपके बुकमार्क, हिस्ट्री, डाउनलोड सूची और ऑफ़लाइन पेज सिर्फ़ आपके फ़ोन में रहते हैं। खोज सीधे आपके चुने हुए सर्च इंजन पर जाती है।");
         p("on", "On", "चालू");
@@ -110,6 +110,61 @@ public final class L {
         p("paused", "Paused", "रुका हुआ");
         p("cant_open", "No app found to open this file", "इस फ़ाइल को खोलने के लिए कोई ऐप नहीं मिला");
         p("external_q", "Open in another app?", "दूसरे ऐप में खोलें?");
+
+        // 4.8: media downloader
+        p("dl_video", "Download video", "वीडियो डाउनलोड");
+        p("dl_video_n", "Download video (%d)", "वीडियो डाउनलोड (%d)");
+        p("media_found", "Videos and audio on this page", "इस पेज के वीडियो और ऑडियो");
+        p("no_media", "No video found on this page yet. Start playing the video, then try again.", "इस पेज पर अभी कोई वीडियो नहीं मिला। पहले वीडियो चलाएँ, फिर दोबारा कोशिश करें।");
+        p("k_video", "Video", "वीडियो");
+        p("k_audio", "Audio", "ऑडियो");
+        p("k_stream", "Streaming video (cannot save)", "स्ट्रीमिंग वीडियो (सेव नहीं हो सकता)");
+        p("k_blob", "Protected stream (cannot save)", "सुरक्षित स्ट्रीम (सेव नहीं हो सकता)");
+        p("stream_title", "This video can't be saved", "यह वीडियो सेव नहीं हो सकता");
+        p("stream_msg", "This video is streamed in small pieces (HLS / blob stream), so it cannot be saved as one file. Look for a direct MP4 link or the website's own download button.",
+                "यह वीडियो छोटे-छोटे टुकड़ों में स्ट्रीम होता है (HLS / blob स्ट्रीम), इसलिए इसे एक फ़ाइल के रूप में सेव नहीं किया जा सकता। सीधा MP4 लिंक या वेबसाइट का अपना डाउनलोड बटन देखें।");
+        p("video_link", "Video", "वीडियो");
+        p("copy_video_link", "Copy video link", "वीडियो लिंक कॉपी करें");
+        p("open_video", "Play in new tab", "नए टैब में चलाएँ");
+        p("hide", "Hide", "छिपाएँ");
+        p("perm_storage", "Storage permission is needed to save files in Downloads. The file will be saved in the app folder instead.", "डाउनलोड फ़ोल्डर में फ़ाइल सेव करने के लिए स्टोरेज अनुमति चाहिए। फ़ाइल ऐप फ़ोल्डर में सेव होगी।");
+        p("share_file", "Share file", "फ़ाइल शेयर करें");
+        p("not_finished", "This download is not finished yet", "यह डाउनलोड अभी पूरा नहीं हुआ है");
+        p("all_downloads", "All downloads", "सभी डाउनलोड");
+
+        // 4.8: ad blocker
+        p("adblock", "Ad blocker", "ऐड ब्लॉकर");
+        p("adblock_long", "Block ads and trackers", "विज्ञापन और ट्रैकर रोकें");
+        p("adblock_count", "Ads and trackers blocked on this page: %d", "इस पेज पर रोके गए विज्ञापन और ट्रैकर: %d");
+        p("adblock_off_msg", "The ad blocker is off.", "ऐड ब्लॉकर बंद है।");
+        p("turn_on", "Turn on", "चालू करें");
+        p("turn_off", "Turn off", "बंद करें");
+        p("blocked_n", "%d blocked", "%d रोके गए");
+
+        // 4.8: reading mode
+        p("reader", "Reading mode", "पढ़ने का मोड");
+        p("reader_none", "Reading mode is not available for this page", "इस पेज के लिए पढ़ने का मोड उपलब्ध नहीं है");
+        p("font_smaller", "Smaller text", "छोटा टेक्स्ट");
+        p("font_bigger", "Bigger text", "बड़ा टेक्स्ट");
+        p("open_original", "Open original page", "असली पेज खोलें");
+
+        // 4.8: other page tools
+        p("night", "Night mode", "नाइट मोड");
+        p("night_long", "Night mode for web pages", "वेब पेज के लिए नाइट मोड");
+        p("night_on", "Night mode on for web pages", "वेब पेज के लिए नाइट मोड चालू");
+        p("night_off", "Night mode off", "नाइट मोड बंद");
+        p("pdf", "Save as PDF", "PDF सेव करें");
+        p("add_home", "Add to Home screen", "होम स्क्रीन पर जोड़ें");
+        p("add_home_done", "Shortcut request sent to your launcher", "शॉर्टकट आपके लॉन्चर को भेज दिया गया");
+        p("not_supported", "Not supported on this phone", "इस फ़ोन पर उपलब्ध नहीं");
+        p("translate", "Translate", "अनुवाद");
+        p("translate_to", "Translate page to", "पेज का अनुवाद करें");
+        p("text_size", "Text size", "टेक्स्ट का आकार");
+        p("reset", "Reset", "रीसेट");
+        p("data_saver", "Data saver", "डेटा सेवर");
+        p("data_saver_long", "Data saver (don't load images)", "डेटा सेवर (इमेज लोड न करें)");
+        p("data_saver_on", "Data saver on: images will not load", "डेटा सेवर चालू: इमेज लोड नहीं होंगी");
+        p("data_saver_off", "Data saver off", "डेटा सेवर बंद");
     }
 
     public static void init(Context c) {

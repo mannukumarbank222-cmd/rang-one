@@ -6,7 +6,7 @@ A=$P/.MainActivity
 mkdir -p shots
 shot() { sleep ${2:-3}; adb exec-out screencap -p > shots/$1.png; }
 crashcheck() { adb logcat -d -b crash > shots/crash_$1.txt 2>&1; }
-adb install -r RangOne_v4.7.apk
+adb install -r RangOne_v4.8.apk
 adb shell pm list packages | grep $P
 adb shell dumpsys package $P | grep -E "versionName|versionCode|permission" > shots/dumpsys.txt
 adb shell wm size; adb shell wm density

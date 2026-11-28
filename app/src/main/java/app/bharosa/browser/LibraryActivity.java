@@ -23,6 +23,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,7 +61,7 @@ public class LibraryActivity extends Activity {
         root.setBackgroundColor(Ui.bg);
         LinearLayout bar = Ui.topBar(this, titles[mode]);
         if (mode == MODE_HISTORY || mode == MODE_DOWNLOADS) {
-            TextView act = Ui.text(this, mode == MODE_HISTORY ? L.t("clear") : L.t("open"), 14, Ui.accent, true);
+            TextView act = Ui.text(this, mode == MODE_HISTORY ? L.t("clear") : L.t("all_downloads"), 14, Ui.accent, true);
             act.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
             act.setBackground(Ui.rippleRound(Color.TRANSPARENT, Ui.dp(this, 18)));
             act.setOnClickListener(new View.OnClickListener() {
@@ -161,7 +162,7 @@ public class LibraryActivity extends Activity {
     private void openDownload(Db.Item it) {
         DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
         int[] st = status(dm, it.dmId);
-        if (st[0] != DownloadManager.STATUS_SUCCESSFUL) return;
+        if (st[0] != DownloadManager.STATUS_SUCCESSFUL) { toast(st[0] == DownloadManager.STATUS_FAILED || st[0] < 0 ? L.t("failed") : L.t("not_finished")); return; }
         try {
             Uri u = dm.getUriForDownloadedFile(it.dmId);
             String mime = dm.getMimeTypeForDownloadedFile(it.dmId);
@@ -172,6 +173,42 @@ public class LibraryActivity extends Activity {
         } catch (Exception e) {
             toast(L.t("cant_open"));
         }
+    }
+
+    private void shareDownload(Db.Item it) {
+        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        if (status(dm, it.dmId)[0] != DownloadManager.STATUS_SUCCESSFUL) { toast(L.t("not_finished")); return; }
+        try {
+            Uri u = dm.getUriForDownloadedFile(it.dmId);
+            String mime = dm.getMimeTypeForDownloadedFile(it.dmId);
+            Intent i = new Intent(Intent.ACTION_SEND);
+            i.setType(mime == null ? "*/*" : mime);
+            i.putExtra(Intent.EXTRA_STREAM, u);
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(i, L.t("share_file")));
+        } catch (Exception e) {
+            toast(L.t("cant_open"));
+        }
+    }
+
+    /** Long-press actions for a download. */
+    private void downloadMenu(final Db.Item it) {
+        String[] items = {L.t("open"), L.t("share_file"), L.t("copy_link"), L.t("delete")};
+        new AlertDialog.Builder(this).setTitle(it.title).setItems(items, new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface d, int w) {
+                if (w == 0) openDownload(it);
+                else if (w == 1) shareDownload(it);
+                else if (w == 2) {
+                    android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    if (cm != null) cm.setPrimaryClip(android.content.ClipData.newPlainText("link", it.url));
+                    toast(L.t("copied"));
+                } else delete(it);
+            }
+        }).show();
+    }
+
+    private static boolean isMediaName(String name) {
+        return name != null && WebJs.hasMediaExt(name);
     }
 
     private void delete(final Db.Item it) {
@@ -217,7 +254,8 @@ public class LibraryActivity extends Activity {
             switch (st[0]) {
                 case DownloadManager.STATUS_SUCCESSFUL: s = L.t("done") + " · " + Formatter.formatShortFileSize(this, st[2]); break;
                 case DownloadManager.STATUS_RUNNING:
-                    s = L.t("running") + (st[2] > 0 ? " · " + (st[1] * 100L / st[2]) + "%" : ""); break;
+                    s = L.t("running") + " · " + Formatter.formatShortFileSize(this, st[1])
+                            + (st[2] > 0 ? " / " + Formatter.formatShortFileSize(this, st[2]) + " · " + (st[1] * 100L / st[2]) + "%" : ""); break;
                 case DownloadManager.STATUS_PENDING: s = L.t("pending"); break;
                 case DownloadManager.STATUS_PAUSED: s = L.t("paused"); break;
                 default: s = L.t("failed");
@@ -244,7 +282,7 @@ public class LibraryActivity extends Activity {
             View lead;
             if (mode == MODE_DOWNLOADS || mode == MODE_OFFLINE) {
                 ImageView iv = new ImageView(LibraryActivity.this);
-                iv.setImageResource(mode == MODE_DOWNLOADS ? R.drawable.ic_download : R.drawable.ic_save);
+                iv.setImageResource(mode == MODE_DOWNLOADS ? (isMediaName(it.title) ? R.drawable.ic_video : R.drawable.ic_download) : R.drawable.ic_save);
                 iv.setColorFilter(Ui.accent);
                 int ip = Ui.dp(LibraryActivity.this, 9);
                 iv.setPadding(ip, ip, ip, ip);
@@ -260,11 +298,27 @@ public class LibraryActivity extends Activity {
             tx.setPadding(p, 0, 0, 0);
             tx.addView(Ui.single(LibraryActivity.this, it.title, 15, Ui.text, false));
             tx.addView(Ui.single(LibraryActivity.this, subtitle(it), 12, Ui.text2, false));
+            if (mode == MODE_DOWNLOADS) {
+                int[] st = status((DownloadManager) getSystemService(DOWNLOAD_SERVICE), it.dmId);
+                if (st[0] == DownloadManager.STATUS_RUNNING || st[0] == DownloadManager.STATUS_PENDING || st[0] == DownloadManager.STATUS_PAUSED) {
+                    ProgressBar pb = new ProgressBar(LibraryActivity.this, null, android.R.attr.progressBarStyleHorizontal);
+                    pb.setMax(100);
+                    pb.setIndeterminate(st[2] <= 0);
+                    if (st[2] > 0) pb.setProgress((int) (st[1] * 100L / st[2]));
+                    pb.setProgressTintList(android.content.res.ColorStateList.valueOf(Ui.accent));
+                    LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(-1, Ui.dp(LibraryActivity.this, 6));
+                    plp.topMargin = Ui.dp(LibraryActivity.this, 4);
+                    tx.addView(pb, plp);
+                }
+            }
             row.addView(tx, new LinearLayout.LayoutParams(0, -2, 1));
             ImageView del = Ui.icon(LibraryActivity.this, R.drawable.ic_delete, Ui.text2, 44, L.t("delete"));
             del.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { delete(it); } });
             row.addView(del);
             row.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { open(it); } });
+            if (mode == MODE_DOWNLOADS) row.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override public boolean onLongClick(View v) { downloadMenu(it); return true; }
+            });
             return row;
         }
     }
