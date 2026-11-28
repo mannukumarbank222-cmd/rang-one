@@ -1,0 +1,270 @@
+{
+ "version": 1,
+ "updated": "2026-11-28",
+ "deals": [
+  {
+   "id": "bm001",
+   "title": "Men's Cotton Kurta Pyjama Set",
+   "store": "Amazon",
+   "category": "fashion",
+   "mrp": 1999,
+   "price": 549,
+   "image": "https://placehold.co/400x400/FF7A00/FFFFFF/png?text=Kurta+Set&font=roboto",
+   "link": "https://www.amazon.in/s?k=mens+cotton+kurta+pyjama+set",
+   "description": "Mulayam cotton kurta-pyjama set, tyohar aur shaadi ke liye. Sizes S se XXL."
+  },
+  {
+   "id": "bm002",
+   "title": "Women's Printed Rayon Kurti",
+   "store": "Meesho",
+   "category": "fashion",
+   "mrp": 1299,
+   "price": 299,
+   "image": "https://placehold.co/400x400/FF7A00/FFFFFF/png?text=Rayon+Kurti&font=roboto",
+   "link": "https://www.meesho.com/search?q=women+rayon+printed+kurti",
+   "description": "Rozana pehnne ke liye halki rayon kurti, sundar print ke saath."
+  },
+  {
+   "id": "bm003",
+   "title": "Banarasi Silk Saree with Blouse",
+   "store": "Myntra",
+   "category": "fashion",
+   "mrp": 4999,
+   "price": 1199,
+   "image": "https://placehold.co/400x400/FF7A00/FFFFFF/png?text=Silk+Saree&font=roboto",
+   "link": "https://www.myntra.com/banarasi-silk-saree",
+   "description": "Zari work wali Banarasi style saree, blouse piece ke saath."
+  },
+  {
+   "id": "bm004",
+   "title": "Men's Running Sports Shoes",
+   "store": "Ajio",
+   "category": "fashion",
+   "mrp": 2999,
+   "price": 899,
+   "image": "https://placehold.co/400x400/FF7A00/FFFFFF/png?text=Sports+Shoes&font=roboto",
+   "link": "https://www.ajio.com/search/?text=men+running+shoes",
+   "description": "Halke aur aaramdayak running shoes, mesh upper."
+  },
+  {
+   "id": "bm005",
+   "title": "Kids Ethnic Dhoti Kurta",
+   "store": "Flipkart",
+   "category": "fashion",
+   "mrp": 1499,
+   "price": 399,
+   "image": "https://placehold.co/400x400/FF7A00/FFFFFF/png?text=Kids+Kurta&font=roboto",
+   "link": "https://www.flipkart.com/search?q=kids+dhoti+kurta",
+   "description": "Bachchon ke liye tyohar special dhoti-kurta set."
+  },
+  {
+   "id": "bm006",
+   "title": "5G Smartphone 8GB RAM 128GB",
+   "store": "Amazon",
+   "category": "electronics",
+   "mrp": 19999,
+   "price": 13999,
+   "image": "https://placehold.co/400x400/2D6CDF/FFFFFF/png?text=5G+Phone&font=roboto",
+   "link": "https://www.amazon.in/s?k=5g+smartphone+8gb+128gb",
+   "description": "6.7 inch display, 5000mAh battery, 50MP camera wala 5G phone."
+  },
+  {
+   "id": "bm007",
+   "title": "True Wireless Earbuds 40hr Battery",
+   "store": "Flipkart",
+   "category": "electronics",
+   "mrp": 3999,
+   "price": 999,
+   "image": "https://placehold.co/400x400/2D6CDF/FFFFFF/png?text=TWS+Earbuds&font=roboto",
+   "link": "https://www.flipkart.com/search?q=tws+earbuds",
+   "description": "ENC mic, low latency gaming mode aur 40 ghante tak battery."
+  },
+  {
+   "id": "bm008",
+   "title": "Smart Watch with Bluetooth Calling",
+   "store": "Amazon",
+   "category": "electronics",
+   "mrp": 5999,
+   "price": 1299,
+   "image": "https://placehold.co/400x400/2D6CDF/FFFFFF/png?text=Smart+Watch&font=roboto",
+   "link": "https://www.amazon.in/s?k=smart+watch+bluetooth+calling",
+   "description": "1.85 inch display, heart rate, SpO2 aur Bluetooth calling."
+  },
+  {
+   "id": "bm009",
+   "title": "20000mAh Power Bank Fast Charging",
+   "store": "Flipkart",
+   "category": "electronics",
+   "mrp": 2499,
+   "price": 1099,
+   "image": "https://placehold.co/400x400/2D6CDF/FFFFFF/png?text=Power+Bank&font=roboto",
+   "link": "https://www.flipkart.com/search?q=20000mah+power+bank",
+   "description": "22.5W fast charging, do USB port ke saath."
+  },
+  {
+   "id": "bm010",
+   "title": "32 inch HD Ready Smart LED TV",
+   "store": "Amazon",
+   "category": "electronics",
+   "mrp": 17999,
+   "price": 10499,
+   "image": "https://placehold.co/400x400/2D6CDF/FFFFFF/png?text=Smart+TV&font=roboto",
+   "link": "https://www.amazon.in/s?k=32+inch+smart+led+tv",
+   "description": "YouTube, Prime Video aur Netflix support wala smart TV."
+  },
+  {
+   "id": "bm011",
+   "title": "Neckband Bluetooth Earphones",
+   "store": "Meesho",
+   "category": "electronics",
+   "mrp": 1999,
+   "price": 449,
+   "image": "https://placehold.co/400x400/2D6CDF/FFFFFF/png?text=Neckband&font=roboto",
+   "link": "https://www.meesho.com/search?q=bluetooth+neckband",
+   "description": "Magnetic earbuds, 30 ghante playback."
+  },
+  {
+   "id": "bm012",
+   "title": "Non-Stick Cookware Set 3 Pieces",
+   "store": "Amazon",
+   "category": "home",
+   "mrp": 2999,
+   "price": 1149,
+   "image": "https://placehold.co/400x400/1E9E4A/FFFFFF/png?text=Cookware+Set&font=roboto",
+   "link": "https://www.amazon.in/s?k=non+stick+cookware+set",
+   "description": "Kadhai, tawa aur fry pan, induction ke saath bhi chalta hai."
+  },
+  {
+   "id": "bm013",
+   "title": "Stainless Steel Pressure Cooker 5L",
+   "store": "Flipkart",
+   "category": "home",
+   "mrp": 3200,
+   "price": 1699,
+   "image": "https://placehold.co/400x400/1E9E4A/FFFFFF/png?text=Pressure+Cooker&font=roboto",
+   "link": "https://www.flipkart.com/search?q=pressure+cooker+5+litre",
+   "description": "ISI mark wala 5 litre pressure cooker."
+  },
+  {
+   "id": "bm014",
+   "title": "Mixer Grinder 750W 3 Jars",
+   "store": "Amazon",
+   "category": "home",
+   "mrp": 5499,
+   "price": 2499,
+   "image": "https://placehold.co/400x400/1E9E4A/FFFFFF/png?text=Mixer+Grinder&font=roboto",
+   "link": "https://www.amazon.in/s?k=mixer+grinder+750w",
+   "description": "Teen jar ke saath taaqatwar 750W mixer grinder."
+  },
+  {
+   "id": "bm015",
+   "title": "Cotton Double Bedsheet with 2 Pillow Covers",
+   "store": "Meesho",
+   "category": "home",
+   "mrp": 1599,
+   "price": 349,
+   "image": "https://placehold.co/400x400/1E9E4A/FFFFFF/png?text=Bedsheet&font=roboto",
+   "link": "https://www.meesho.com/search?q=double+bedsheet+cotton",
+   "description": "Rang-birangi cotton double bedsheet, do takiye ke cover."
+  },
+  {
+   "id": "bm016",
+   "title": "LED Diwali String Lights 15m",
+   "store": "Flipkart",
+   "category": "home",
+   "mrp": 999,
+   "price": 199,
+   "image": "https://placehold.co/400x400/1E9E4A/FFFFFF/png?text=String+Lights&font=roboto",
+   "link": "https://www.flipkart.com/search?q=led+string+lights+diwali",
+   "description": "Tyohar ki sajavat ke liye 15 metre LED jhalar."
+  },
+  {
+   "id": "bm017",
+   "title": "Herbal Face Wash Combo Pack",
+   "store": "Amazon",
+   "category": "beauty",
+   "mrp": 699,
+   "price": 349,
+   "image": "https://placehold.co/400x400/D6336C/FFFFFF/png?text=Face+Wash&font=roboto",
+   "link": "https://www.amazon.in/s?k=herbal+face+wash+combo",
+   "description": "Neem aur haldi wala face wash, 2 ka pack."
+  },
+  {
+   "id": "bm018",
+   "title": "Matte Lipstick Set of 6",
+   "store": "Myntra",
+   "category": "beauty",
+   "mrp": 1499,
+   "price": 399,
+   "image": "https://placehold.co/400x400/D6336C/FFFFFF/png?text=Lipstick+Set&font=roboto",
+   "link": "https://www.myntra.com/matte-lipstick-set",
+   "description": "Lambe samay tak tikne wali 6 matte shades."
+  },
+  {
+   "id": "bm019",
+   "title": "Hair Dryer 1200W Foldable",
+   "store": "Flipkart",
+   "category": "beauty",
+   "mrp": 1999,
+   "price": 749,
+   "image": "https://placehold.co/400x400/D6336C/FFFFFF/png?text=Hair+Dryer&font=roboto",
+   "link": "https://www.flipkart.com/search?q=hair+dryer+1200w",
+   "description": "Folding handle, do heat setting."
+  },
+  {
+   "id": "bm020",
+   "title": "Beard Trimmer 60 Min Runtime",
+   "store": "Amazon",
+   "category": "beauty",
+   "mrp": 2195,
+   "price": 1149,
+   "image": "https://placehold.co/400x400/D6336C/FFFFFF/png?text=Trimmer&font=roboto",
+   "link": "https://www.amazon.in/s?k=beard+trimmer",
+   "description": "20 length setting, USB charging."
+  },
+  {
+   "id": "bm021",
+   "title": "NCERT Class 10 Science & Maths Combo",
+   "store": "Amazon",
+   "category": "books_toys",
+   "mrp": 600,
+   "price": 420,
+   "image": "https://placehold.co/400x400/7B4BD6/FFFFFF/png?text=NCERT+Books&font=roboto",
+   "link": "https://www.amazon.in/s?k=ncert+class+10+books",
+   "description": "Board exam ki taiyari ke liye NCERT kitabein."
+  },
+  {
+   "id": "bm022",
+   "title": "Hindi Story Books for Kids Set of 10",
+   "store": "Flipkart",
+   "category": "books_toys",
+   "mrp": 999,
+   "price": 279,
+   "image": "https://placehold.co/400x400/7B4BD6/FFFFFF/png?text=Kahani+Set&font=roboto",
+   "link": "https://www.flipkart.com/search?q=hindi+story+books+for+kids",
+   "description": "Bachchon ke liye chitron wali 10 Hindi kahaniyan."
+  },
+  {
+   "id": "bm023",
+   "title": "Remote Control Racing Car",
+   "store": "Meesho",
+   "category": "books_toys",
+   "mrp": 1499,
+   "price": 399,
+   "image": "https://placehold.co/400x400/7B4BD6/FFFFFF/png?text=RC+Car&font=roboto",
+   "link": "https://www.meesho.com/search?q=remote+control+car",
+   "description": "Rechargeable battery wali tez remote control car."
+  },
+  {
+   "id": "bm024",
+   "title": "Building Blocks 500 Pieces",
+   "store": "Ajio",
+   "category": "books_toys",
+   "mrp": 1999,
+   "price": 549,
+   "image": "https://placehold.co/400x400/7B4BD6/FFFFFF/png?text=Blocks&font=roboto",
+   "link": "https://www.ajio.com/search/?text=building+blocks+500+pieces",
+   "description": "Rachnatmak khel ke liye 500 rang-birange blocks."
+  }
+ ]
+}

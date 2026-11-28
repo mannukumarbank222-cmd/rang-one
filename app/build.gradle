@@ -1,0 +1,20 @@
+plugins { id 'com.android.application' }
+android {
+  namespace 'app.bachatmela.deals'
+  compileSdk 34
+  defaultConfig { applicationId 'app.bachatmela.deals'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' }
+  signingConfigs {
+    release {
+      storeFile file(System.getenv('KS_PATH') ?: 'none.keystore')
+      storePassword System.getenv('KS_PASS') ?: ''
+      keyAlias 'bharosa'
+      keyPassword System.getenv('KS_PASS') ?: ''
+      storeType 'pkcs12'
+      enableV1Signing true
+      enableV2Signing true
+    }
+  }
+  buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+  lint { abortOnError false; checkReleaseBuilds false }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
